@@ -658,6 +658,7 @@ function deleteMealItem(mealKey, idx) {
 // ── CALORIE DATABASE (local first, API fallback) ───────────────
 const CAL_DB = {
   // Breakfast
+  'egg':78,'eggs':156,'1 egg':78,'2 eggs':156,'3 eggs':234,'4 eggs':312,
   'oatmeal':350,'oats':350,'porridge':350,'granola':450,'muesli':380,
   'scrambled eggs':220,'fried egg':180,'boiled egg':155,'poached egg':155,'omelette':300,
   'scrambled eggs with avocado':380,'eggs and avocado':400,
@@ -727,12 +728,17 @@ const CAL_DB = {
 
 function lookupLocal(name) {
   const q = name.toLowerCase().trim();
-  // exact match
+  // exact match first
   if (CAL_DB[q]) return CAL_DB[q];
-  // contains match - find longest key that the query contains or that contains the query
+  // word-level exact match (e.g. "egg" should not match "scrambled eggs")
+  // Only match if ALL words in the KEY appear in the QUERY (not the other way)
   let best = null, bestLen = 0;
   for (const [key, cal] of Object.entries(CAL_DB)) {
-    if ((q.includes(key) || key.includes(q)) && key.length > bestLen) {
+    const keyWords = key.split(' ');
+    const queryWords = q.split(' ');
+    // Every word in the key must be present in the query
+    const allMatch = keyWords.every(kw => queryWords.some(qw => qw === kw || qw.startsWith(kw) || kw.startsWith(qw)));
+    if (allMatch && key.length > bestLen) {
       best = cal; bestLen = key.length;
     }
   }

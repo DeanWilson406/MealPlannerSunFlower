@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -644,7 +645,7 @@ async function addMealItem(mealKey) {
   inp.focus();
 
   renderPlanner();
-  toast(`Added: ${name} ${cal ? '(~' + cal + ' kcal)' : ''}`);
+  toast(`Added: ${name} ${cal ? '~' + cal + ' kcal' : '(calories unknown)'}`);
 }
 
 function deleteMealItem(mealKey, idx) {
@@ -654,25 +655,130 @@ function deleteMealItem(mealKey, idx) {
   renderPlanner();
 }
 
-// ── AI CALORIE ESTIMATOR ───────────────────
-async function estimateCalories(foodName) {
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 100,
-      messages: [{
-        role: 'user',
-        content: `Estimate the calories for a typical single serving of: "${foodName}". Reply with ONLY a single integer number. No text, no units, just the number. If unsure, give your best estimate.`
-      }]
-    })
-  });
-  const data = await response.json();
-  const text = data.content?.[0]?.text?.trim() || '0';
-  const num = parseInt(text.replace(/[^0-9]/g, ''));
-  return isNaN(num) ? 0 : num;
+// ── CALORIE DATABASE (local first, API fallback) ───────────────
+const CAL_DB = {
+  // Breakfast
+  'oatmeal':350,'oats':350,'porridge':350,'granola':450,'muesli':380,
+  'scrambled eggs':220,'fried egg':180,'boiled egg':155,'poached egg':155,'omelette':300,
+  'scrambled eggs with avocado':380,'eggs and avocado':400,
+  'bacon':250,'turkey bacon':160,'sausage':300,'breakfast sausage':300,
+  'toast':150,'white toast':150,'whole wheat toast':130,'sourdough toast':160,
+  'avocado toast':280,'avocado on toast':280,
+  'bagel':270,'bagel with cream cheese':370,'cream cheese bagel':370,
+  'pancakes':350,'waffle':310,'french toast':300,
+  'cereal':200,'cornflakes':150,'bran flakes':190,'cheerios':140,
+  'milk':120,'whole milk':150,'skim milk':85,'almond milk':40,'oat milk':120,
+  'yogurt':150,'greek yogurt':130,'plain yogurt':140,'fruit yogurt':180,
+  'smoothie':250,'fruit smoothie':280,'protein smoothie':350,'green smoothie':200,
+  'banana':105,'apple':95,'orange':65,'berries':70,'blueberries':85,'strawberries':50,
+  'mango':100,'pineapple':82,'grapes':70,'watermelon':85,'peach':58,'pear':100,
+  'coffee':5,'black coffee':5,'latte':190,'cappuccino':120,'americano':10,'espresso':5,
+  'orange juice':110,'apple juice':120,'grapefruit juice':95,
+  'muffin':350,'blueberry muffin':380,'bran muffin':300,'croissant':280,
+  'protein bar':200,'granola bar':190,'energy bar':220,
+  // Lunch
+  'sandwich':380,'turkey sandwich':380,'chicken sandwich':450,'blt':450,'club sandwich':490,
+  'grilled cheese':400,'grilled cheese sandwich':400,
+  'burger':500,'cheeseburger':550,'hamburger':500,'veggie burger':350,
+  'wrap':400,'chicken wrap':450,'veggie wrap':350,'burrito':550,'taco':200,
+  'salad':200,'green salad':120,'caesar salad':350,'garden salad':150,
+  'chicken salad':300,'tuna salad':280,'egg salad':280,'pasta salad':350,
+  'soup':150,'tomato soup':180,'chicken noodle soup':150,'minestrone':180,'lentil soup':230,
+  'pizza slice':285,'cheese pizza':285,'pepperoni pizza':313,'pizza':285,
+  'quesadilla':400,'chicken quesadilla':450,
+  'sushi':350,'sushi roll':350,'california roll':250,'salmon roll':300,
+  'ramen':500,'pho':450,'pad thai':520,'fried rice':420,'lo mein':400,
+  'mac and cheese':400,'macaroni and cheese':400,
+  'hot dog':290,'corn dog':280,
+  // Dinner
+  'chicken breast':165,'grilled chicken':200,'baked chicken':220,'fried chicken':350,
+  'chicken thigh':220,'rotisserie chicken':280,
+  'salmon':280,'grilled salmon':300,'baked salmon':280,'tilapia':200,'tuna steak':200,
+  'shrimp':120,'grilled shrimp':150,'shrimp stir fry':250,
+  'steak':300,'beef steak':300,'sirloin':250,'ribeye':400,'filet mignon':280,
+  'pork chop':280,'pork tenderloin':200,'pulled pork':300,
+  'ground beef':290,'beef tacos':400,'beef stir fry':350,
+  'pasta':350,'spaghetti':400,'spaghetti bolognese':550,'penne':350,'fettuccine alfredo':580,
+  'lasagna':400,'ravioli':350,
+  'rice':200,'white rice':200,'brown rice':220,'fried rice':400,'risotto':380,
+  'potatoes':160,'baked potato':160,'mashed potatoes':230,'roasted potatoes':200,'sweet potato':180,
+  'broccoli':55,'green beans':35,'asparagus':40,'spinach':25,'kale':50,'zucchini':35,
+  'pizza':700,'whole pizza':700,
+  'stir fry':350,'chicken stir fry':380,'beef stir fry':400,'tofu stir fry':300,
+  'curry':450,'chicken curry':500,'beef curry':520,'vegetable curry':380,
+  'tacos':400,'fish tacos':380,'shrimp tacos':350,
+  'chili':350,'beef chili':400,'vegetarian chili':300,
+  'roast chicken':320,'pot roast':400,'meatballs':350,'meatloaf':300,
+  // Snacks
+  'apple':95,'banana':105,'orange':65,'grapes':70,
+  'nuts':180,'almonds':170,'cashews':160,'peanuts':170,'walnuts':190,'mixed nuts':180,
+  'chips':150,'potato chips':150,'tortilla chips':140,'popcorn':110,
+  'crackers':130,'rice cakes':70,'pretzels':120,
+  'cheese':110,'cheddar cheese':110,'string cheese':80,'cottage cheese':110,
+  'hummus':170,'guacamole':150,'salsa':35,
+  'chocolate':235,'dark chocolate':170,'milk chocolate':235,
+  'ice cream':270,'frozen yogurt':160,'gelato':200,
+  'cookie':150,'chocolate chip cookie':180,'brownie':230,'cake':350,
+  'protein shake':180,'whey protein':130,
+  'peanut butter':190,'almond butter':200,'peanut butter on toast':340,
+  'trail mix':175,'dried fruit':120,'raisins':130,
+  'edamame':120,'celery':15,'carrot sticks':50,'cucumber':25,
+};
+
+function lookupLocal(name) {
+  const q = name.toLowerCase().trim();
+  // exact match
+  if (CAL_DB[q]) return CAL_DB[q];
+  // contains match - find longest key that the query contains or that contains the query
+  let best = null, bestLen = 0;
+  for (const [key, cal] of Object.entries(CAL_DB)) {
+    if ((q.includes(key) || key.includes(q)) && key.length > bestLen) {
+      best = cal; bestLen = key.length;
+    }
+  }
+  return best;
 }
+
+async function lookupOpenFoodFacts(name) {
+  try {
+    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(name)}&search_simple=1&action=process&json=1&page_size=5&fields=product_name,nutriments`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const products = (data.products || []).filter(p => p.nutriments?.['energy-kcal_100g']);
+    if (!products.length) return null;
+    // Pick first result with reasonable calories
+    const p = products[0];
+    const per100 = p.nutriments['energy-kcal_100g'];
+    // Estimate a typical serving (~150g average)
+    const serving = p.nutriments['energy-kcal_serving'] || Math.round(per100 * 1.5);
+    return Math.min(Math.max(serving, 10), 2000); // sanity clamp
+  } catch(e) { return null; }
+}
+
+async function estimateCalories(foodName) {
+  // 1. Try local DB first (instant)
+  const local = lookupLocal(foodName);
+  if (local) return local;
+  // 2. Try Open Food Facts (free, no key needed)
+  const remote = await lookupOpenFoodFacts(foodName);
+  if (remote) return remote;
+  // 3. Fallback: rough estimate based on common patterns
+  const q = foodName.toLowerCase();
+  if (q.includes('salad')) return 180;
+  if (q.includes('soup')) return 160;
+  if (q.includes('sandwich') || q.includes('wrap')) return 400;
+  if (q.includes('chicken')) return 280;
+  if (q.includes('fish') || q.includes('salmon') || q.includes('tuna')) return 250;
+  if (q.includes('pasta') || q.includes('rice') || q.includes('noodle')) return 380;
+  if (q.includes('smoothie') || q.includes('shake')) return 280;
+  if (q.includes('coffee') || q.includes('tea')) return 20;
+  if (q.includes('juice')) return 110;
+  if (q.includes('fruit')) return 80;
+  if (q.includes('vegetable') || q.includes('veggie') || q.includes('veg')) return 80;
+  if (q.includes('cake') || q.includes('cookie') || q.includes('dessert')) return 280;
+  return 0; // unknown
+}
+
 
 // ── OVERVIEW ───────────────────────────────
 function renderOverview() {

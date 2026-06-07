@@ -1,0 +1,14 @@
+{
+  "name": "Sunny Meals — Weekly Planner",
+  "short_name": "Sunny Meals",
+  "description": "A sunflower-themed weekly meal planner with calorie tracking and grocery list.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FDF6E3",
+  "theme_color": "#FDF6E3",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icon.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

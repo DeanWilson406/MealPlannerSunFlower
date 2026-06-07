@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Sunny Meals">
+<meta name="theme-color" content="#FDF6E3">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
+<title>Sunny Meals 🌻</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,400&family=Nunito:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sun: #F5C518;
+  --sun-deep: #E6A800;
+  --sun-pale: #FEF3C0;
+  --sun-glow: #FFFBEB;
+  --petal: #F97316;
+  --petal-light: #FED7AA;
+  --stem: #65A30D;
+  --stem-light: #D9F99D;
+  --stem-pale: #F7FEE7;
+  --brown: #78350F;
+  --brown-mid: #92400E;
+  --cream: #FDF6E3;
+  --warm-white: #FFFDF7;
+  --text: #1C1917;
+  --text-mid: #57534E;
+  --text-light: #A8A29E;
+  --border: #E7E5E4;
+  --radius: 18px;
+  --radius-sm: 12px;
+  --shadow: 0 2px 16px rgba(245,197,24,0.15);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--cream);
+  color: var(--text);
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* Sunflower pattern background */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(245,197,24,0.08) 0%, transparent 40%),
+    radial-gradient(circle at 85% 80%, rgba(249,115,22,0.06) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(101,163,13,0.04) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+
+/* NAV */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(253,246,227,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 2px solid var(--sun-pale);
+  padding-top: env(safe-area-inset-top, 0);
+}
+.nav-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 20px;
+  max-width: 500px; margin: 0 auto;
+}
+.nav-brand { display: flex; align-items: center; gap: 10px; }
+.nav-icon { font-size: 26px; line-height: 1; }
+.nav-title { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--brown); }
+.nav-sub { font-size: 11px; color: var(--text-light); letter-spacing: 0.08em; text-transform: uppercase; }
+.week-badge {
+  background: var(--sun); color: var(--brown);
+  border-radius: 20px; padding: 5px 14px;
+  font-size: 12px; font-weight: 700;
+  font-family: 'Nunito', sans-serif;
+}
+
+/* TAB BAR */
+.tabs {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(253,246,227,0.97);
+  backdrop-filter: blur(12px);
+  border-top: 2px solid var(--sun-pale);
+  display: flex;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+.tab-btn {
+  flex: 1; border: none; background: none; cursor: pointer;
+  padding: 10px 4px 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  color: var(--text-light); font-family: 'Nunito', sans-serif;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.03em;
+  transition: color 0.2s;
+}
+.tab-btn.active { color: var(--petal); }
+.tab-btn .tab-icon { font-size: 22px; line-height: 1; }
+
+/* SCREENS */
+.screen { display: none; padding: 82px 16px 100px; max-width: 500px; margin: 0 auto; position: relative; z-index: 1; }
+.screen.active { display: block; }
+
+/* SECTION LABEL */
+.section-label {
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-light); font-weight: 700;
+  margin-bottom: 12px; margin-top: 28px;
+}
+.section-label:first-child { margin-top: 0; }
+
+/* CARDS */
+.card {
+  background: var(--warm-white);
+  border-radius: var(--radius);
+  border: 1.5px solid var(--border);
+  padding: 18px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+}
+
+/* DAY SELECTOR */
+.day-strip {
+  display: flex; gap: 8px; overflow-x: auto;
+  padding-bottom: 4px; margin-bottom: 20px;
+  scrollbar-width: none;
+}
+.day-strip::-webkit-scrollbar { display: none; }
+.day-pill {
+  flex-shrink: 0;
+  border: 2px solid var(--border);
+  border-radius: 50px; padding: 8px 16px;
+  background: var(--warm-white); cursor: pointer;
+  font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 600;
+  color: var(--text-mid); transition: all 0.2s;
+  white-space: nowrap;
+}
+.day-pill.active {
+  background: var(--sun); border-color: var(--sun-deep);
+  color: var(--brown); box-shadow: 0 2px 12px rgba(245,197,24,0.4);
+}
+
+/* MEAL SLOTS */
+.meal-slot { margin-bottom: 14px; }
+.meal-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+}
+.meal-icon { font-size: 18px; }
+.meal-label { font-size: 13px; font-weight: 700; color: var(--brown-mid); text-transform: uppercase; letter-spacing: 0.06em; }
+.meal-cal-total { margin-left: auto; font-size: 12px; color: var(--petal); font-weight: 700; }
+
+.meal-items { display: flex; flex-direction: column; gap: 8px; }
+
+.meal-item {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--sun-glow); border: 1.5px solid var(--sun-pale);
+  border-radius: var(--radius-sm); padding: 10px 12px;
+}
+.meal-item-name { flex: 1; font-size: 14px; color: var(--text); font-weight: 500; }
+.meal-item-cal {
+  font-size: 12px; font-weight: 700; color: var(--petal);
+  background: var(--petal-light); border-radius: 8px; padding: 3px 8px;
+  white-space: nowrap;
+}
+.meal-item-del {
+  background: none; border: none; cursor: pointer;
+  font-size: 16px; color: var(--text-light); padding: 2px;
+  line-height: 1; transition: color 0.15s;
+}
+.meal-item-del:hover { color: #dc2626; }
+
+.add-meal-row {
+  display: flex; gap: 8px; align-items: center; margin-top: 6px;
+}
+.add-meal-input {
+  flex: 1; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  padding: 9px 12px; font-family: 'Nunito', sans-serif; font-size: 13px;
+  color: var(--text); background: var(--warm-white);
+  transition: border-color 0.2s;
+}
+.add-meal-input:focus { outline: none; border-color: var(--sun-deep); }
+.add-meal-input::placeholder { color: var(--text-light); }
+.add-meal-btn {
+  background: var(--sun); border: none; border-radius: var(--radius-sm);
+  padding: 9px 14px; cursor: pointer; font-size: 18px; line-height: 1;
+  transition: all 0.15s; box-shadow: 0 2px 8px rgba(245,197,24,0.3);
+}
+.add-meal-btn:active { transform: scale(0.95); }
+.add-meal-btn.loading { opacity: 0.6; pointer-events: none; }
+
+/* DAY SUMMARY BAR */
+.day-summary {
+  background: linear-gradient(135deg, var(--sun) 0%, var(--petal) 100%);
+  border-radius: var(--radius); padding: 16px 20px; margin-bottom: 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 4px 20px rgba(245,197,24,0.35);
+}
+.day-summary-label { font-size: 12px; color: rgba(120,53,15,0.8); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+.day-summary-cal { font-family: 'Playfair Display', serif; font-size: 28px; color: var(--brown); }
+.day-summary-sub { font-size: 11px; color: rgba(120,53,15,0.7); margin-top: 2px; }
+.sunflower-emoji { font-size: 36px; }
+
+/* GROCERY LIST */
+.grocery-add-row { display: flex; gap: 8px; margin-bottom: 16px; }
+.grocery-input {
+  flex: 1; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  padding: 11px 14px; font-family: 'Nunito', sans-serif; font-size: 14px;
+  color: var(--text); background: var(--warm-white);
+}
+.grocery-input:focus { outline: none; border-color: var(--sun-deep); }
+.grocery-add-btn {
+  background: var(--stem); border: none; border-radius: var(--radius-sm);
+  padding: 11px 18px; cursor: pointer; color: white;
+  font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 700;
+  transition: all 0.15s;
+}
+.grocery-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 16px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); background: var(--warm-white);
+  margin-bottom: 8px; transition: all 0.2s; cursor: pointer;
+}
+.grocery-item.checked {
+  background: var(--stem-pale); border-color: var(--stem-light);
+  opacity: 0.7;
+}
+.grocery-check {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid var(--border); background: none;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all 0.2s;
+}
+.grocery-item.checked .grocery-check {
+  background: var(--stem); border-color: var(--stem);
+  color: white; font-size: 13px;
+}
+.grocery-item-name {
+  flex: 1; font-size: 14px; font-weight: 500; color: var(--text);
+  transition: all 0.2s;
+}
+.grocery-item.checked .grocery-item-name {
+  text-decoration: line-through; color: var(--text-light);
+}
+.grocery-del { background: none; border: none; cursor: pointer; color: var(--text-light); font-size: 16px; }
+.grocery-progress {
+  background: var(--stem-pale); border-radius: var(--radius); padding: 14px 16px;
+  margin-bottom: 16px; display: flex; align-items: center; gap: 12px;
+}
+.grocery-progress-bar-wrap { flex: 1; background: var(--border); border-radius: 8px; height: 8px; }
+.grocery-progress-bar { height: 8px; border-radius: 8px; background: var(--stem); transition: width 0.4s ease; }
+.grocery-progress-label { font-size: 13px; font-weight: 700; color: var(--stem); white-space: nowrap; }
+
+/* WEEKLY OVERVIEW */
+.week-grid { display: flex; flex-direction: column; gap: 10px; }
+.week-day-card {
+  background: var(--warm-white); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px;
+  cursor: pointer; transition: all 0.2s;
+}
+.week-day-card:active { transform: scale(0.99); }
+.week-day-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.week-day-name { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--brown); }
+.week-day-cal { font-size: 13px; font-weight: 700; color: var(--petal); }
+.week-day-meals { display: flex; gap: 6px; flex-wrap: wrap; }
+.week-day-meal-chip {
+  background: var(--sun-pale); border-radius: 20px; padding: 3px 10px;
+  font-size: 11px; font-weight: 600; color: var(--brown-mid);
+}
+.week-day-empty { font-size: 12px; color: var(--text-light); font-style: italic; }
+
+/* SETTINGS */
+.settings-section { margin-bottom: 20px; }
+.settings-title { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--brown); margin-bottom: 12px; }
+.danger-btn {
+  width: 100%; padding: 13px; border-radius: var(--radius-sm);
+  border: 2px solid #fca5a5; background: #fff1f1; cursor: pointer;
+  font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 700;
+  color: #dc2626; margin-bottom: 10px; transition: all 0.2s;
+}
+.safe-btn {
+  width: 100%; padding: 13px; border-radius: var(--radius-sm);
+  border: 2px solid var(--stem-light); background: var(--stem-pale); cursor: pointer;
+  font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 700;
+  color: var(--stem); margin-bottom: 10px; transition: all 0.2s;
+}
+
+/* MODAL */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(28,25,23,0.5); align-items: flex-end; justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal-box {
+  background: var(--warm-white); border-radius: var(--radius) var(--radius) 0 0;
+  padding: 24px 20px 36px; width: 100%; max-width: 500px;
+  max-height: 85vh; overflow-y: auto;
+}
+.modal-title { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--brown); margin-bottom: 6px; }
+.modal-sub { font-size: 13px; color: var(--text-mid); margin-bottom: 20px; line-height: 1.5; }
+.modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+.modal-cancel {
+  flex: 1; padding: 13px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); background: none; cursor: pointer;
+  font-family: 'Nunito', sans-serif; font-size: 14px; color: var(--text-mid);
+}
+.modal-confirm {
+  flex: 1; padding: 13px; border-radius: var(--radius-sm);
+  border: none; background: #dc2626; cursor: pointer;
+  font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 700; color: white;
+}
+
+/* DAY CHECKBOXES */
+.day-check-list { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+.day-check-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); background: var(--cream);
+  cursor: pointer;
+}
+.day-check-item.selected { background: var(--sun-pale); border-color: var(--sun-deep); }
+.day-check-box {
+  width: 20px; height: 20px; border-radius: 6px;
+  border: 2px solid var(--border); background: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; flex-shrink: 0;
+}
+.day-check-item.selected .day-check-box { background: var(--sun); border-color: var(--sun-deep); }
+.day-check-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.day-check-meals { font-size: 12px; color: var(--text-light); margin-left: auto; }
+
+/* AI SPINNER */
+.ai-spinner {
+  display: inline-block; width: 16px; height: 16px;
+  border: 2px solid rgba(120,53,15,0.2); border-top-color: var(--brown);
+  border-radius: 50%; animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+  background: var(--brown); color: white; border-radius: 20px;
+  padding: 10px 22px; font-size: 13px; font-weight: 600;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  white-space: nowrap; z-index: 300;
+}
+.toast.show { opacity: 1; }
+
+/* WEEK HEADER */
+.week-header-card {
+  background: linear-gradient(135deg, #F5C518 0%, #F97316 100%);
+  border-radius: var(--radius); padding: 20px; margin-bottom: 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 6px 24px rgba(245,197,24,0.35);
+}
+.week-header-left .wh-label { font-size: 11px; color: rgba(120,53,15,0.8); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; }
+.week-header-left .wh-week { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--brown); }
+.week-header-left .wh-cal { font-size: 13px; color: var(--brown-mid); margin-top: 2px; }
+.week-sunflowers { font-size: 32px; letter-spacing: -4px; }
+
+.cal-breakdown {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px;
+}
+.cal-card {
+  background: var(--warm-white); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px 14px;
+}
+.cal-card-label { font-size: 11px; color: var(--text-light); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+.cal-card-val { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--brown); margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<div class="nav">
+  <div class="nav-inner">
+    <div class="nav-brand">
+      <div class="nav-icon">🌻</div>
+      <div>
+        <div class="nav-title">Sunny Meals</div>
+        <div class="nav-sub">Weekly Planner</div>
+      </div>
+    </div>
+    <div class="week-badge" id="nav-week-badge">Week 1</div>
+  </div>
+</div>
+
+<!-- SCREENS -->
+
+<!-- PLANNER -->
+<div id="screen-planner" class="screen active">
+  <div class="day-strip" id="day-strip"></div>
+
+  <div class="day-summary" id="day-summary">
+    <div>
+      <div class="day-summary-label">Today's calories</div>
+      <div class="day-summary-cal" id="summary-cal">0 kcal</div>
+      <div class="day-summary-sub" id="summary-sub">Add your meals below</div>
+    </div>
+    <div class="sunflower-emoji">🌻</div>
+  </div>
+
+  <div id="meal-slots-container"></div>
+</div>
+
+<!-- OVERVIEW -->
+<div id="screen-overview" class="screen">
+  <div class="week-header-card" id="week-header-card">
+    <div class="week-header-left">
+      <div class="wh-label">This week</div>
+      <div class="wh-week" id="wh-week-label">Week 1</div>
+      <div class="wh-cal" id="wh-total-cal">0 kcal total</div>
+    </div>
+    <div class="week-sunflowers">🌻🌻</div>
+  </div>
+
+  <div class="cal-breakdown" id="cal-breakdown"></div>
+
+  <div class="section-label">Daily breakdown</div>
+  <div class="week-grid" id="week-grid"></div>
+</div>
+
+<!-- GROCERY -->
+<div id="screen-grocery" class="screen">
+  <div class="section-label">Grocery list 🛒</div>
+  <div class="grocery-add-row">
+    <input class="grocery-input" id="grocery-input" placeholder="Add an item…" />
+    <button class="grocery-add-btn" onclick="addGroceryItem()">Add</button>
+  </div>
+  <div class="grocery-progress" id="grocery-progress" style="display:none;">
+    <div>🌱</div>
+    <div class="grocery-progress-bar-wrap"><div class="grocery-progress-bar" id="grocery-bar"></div></div>
+    <div class="grocery-progress-label" id="grocery-progress-label">0 / 0</div>
+  </div>
+  <div id="grocery-list"></div>
+</div>
+
+<!-- SETTINGS -->
+<div id="screen-settings" class="screen">
+  <div class="section-label">Week management</div>
+  <div class="card">
+    <div class="settings-title">Reset options</div>
+    <p style="font-size:13px; color:var(--text-mid); margin-bottom:16px; line-height:1.6;">Clear meals from specific days, or wipe the whole week and start fresh. Your grocery list is never affected.</p>
+    <button class="safe-btn" onclick="openModal('days')">🗓️ Delete specific days…</button>
+    <button class="danger-btn" onclick="openModal('week')">🗑️ Wipe entire week</button>
+  </div>
+
+  <div class="section-label">History</div>
+  <div class="card">
+    <div class="settings-title">Week navigation</div>
+    <p style="font-size:13px; color:var(--text-mid); margin-bottom:16px; line-height:1.6;">You are currently on <strong id="settings-week-label">Week 1</strong>. New weeks are created automatically — or you can jump to a new week manually.</p>
+    <button class="safe-btn" onclick="nextWeek()">➡️ Start next week</button>
+  </div>
+
+  <div class="section-label">All data</div>
+  <div class="card">
+    <button class="danger-btn" onclick="openModal('all')">⚠️ Delete everything &amp; start over</button>
+  </div>
+</div>
+
+<!-- TAB BAR -->
+<div class="tabs">
+  <button class="tab-btn active" id="tab-planner" onclick="showScreen('planner')">
+    <div class="tab-icon">🌻</div>Planner
+  </button>
+  <button class="tab-btn" id="tab-overview" onclick="showScreen('overview')">
+    <div class="tab-icon">📊</div>Overview
+  </button>
+  <button class="tab-btn" id="tab-grocery" onclick="showScreen('grocery')">
+    <div class="tab-icon">🛒</div>Grocery
+  </button>
+  <button class="tab-btn" id="tab-settings" onclick="showScreen('settings')">
+    <div class="tab-icon">⚙️</div>Settings
+  </button>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-sub" id="modal-sub"></div>
+    <div id="modal-body"></div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-confirm" id="modal-confirm-btn" onclick="doModalAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONSTANTS ──────────────────────────────
+const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const MEALS = [
+  { key: 'breakfast', label: 'Breakfast', icon: '🌅' },
+  { key: 'lunch',     label: 'Lunch',     icon: '☀️' },
+  { key: 'dinner',    label: 'Dinner',    icon: '🌙' },
+  { key: 'snacks',    label: 'Snacks',    icon: '🍎' },
+];
+
+// ── STATE ──────────────────────────────────
+let state = {};
+let currentDay = 0;
+let currentWeek = 1;
+let pendingModal = '';
+let selectedDays = new Set();
+
+function load() {
+  try { state = JSON.parse(localStorage.getItem('sunny_meals') || '{}'); } catch(e) { state = {}; }
+  currentWeek = state.currentWeek || 1;
+  currentDay = state.currentDay || 0;
+}
+function save() { state.currentWeek = currentWeek; state.currentDay = currentDay; localStorage.setItem('sunny_meals', JSON.stringify(state)); }
+
+function wkey(week) { return `w${week}`; }
+function dayData(week, day) {
+  if (!state[wkey(week)]) state[wkey(week)] = {};
+  if (!state[wkey(week)][day]) state[wkey(week)][day] = { breakfast:[], lunch:[], dinner:[], snacks:[] };
+  return state[wkey(week)][day];
+}
+function groceryData() {
+  if (!state.grocery) state.grocery = [];
+  return state.grocery;
+}
+
+// ── TOAST ──────────────────────────────────
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── SCREEN NAV ─────────────────────────────
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'planner') renderPlanner();
+  if (name === 'overview') renderOverview();
+  if (name === 'grocery') renderGrocery();
+  if (name === 'settings') renderSettings();
+}
+
+// ── PLANNER ────────────────────────────────
+function renderPlanner() {
+  // day strip
+  const strip = document.getElementById('day-strip');
+  strip.innerHTML = '';
+  DAYS.forEach((d, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'day-pill' + (i === currentDay ? ' active' : '');
+    btn.textContent = d.slice(0,3);
+    btn.onclick = () => { currentDay = i; save(); renderPlanner(); };
+    strip.appendChild(btn);
+  });
+
+  // summary
+  const data = dayData(currentWeek, currentDay);
+  const total = totalCal(data);
+  document.getElementById('summary-cal').textContent = total ? total + ' kcal' : '0 kcal';
+  document.getElementById('summary-sub').textContent = total ? DAYS[currentDay] + "'s plan" : 'Add meals below 🌻';
+
+  // meal slots
+  const cont = document.getElementById('meal-slots-container');
+  cont.innerHTML = '';
+  MEALS.forEach(meal => {
+    const slot = document.createElement('div');
+    slot.className = 'card meal-slot';
+
+    const items = data[meal.key] || [];
+    const mealCal = items.reduce((a, x) => a + (x.cal || 0), 0);
+
+    slot.innerHTML = `
+      <div class="meal-header">
+        <span class="meal-icon">${meal.icon}</span>
+        <span class="meal-label">${meal.label}</span>
+        <span class="meal-cal-total">${mealCal ? mealCal + ' kcal' : ''}</span>
+      </div>
+      <div class="meal-items" id="items-${meal.key}"></div>
+      <div class="add-meal-row">
+        <input class="add-meal-input" id="input-${meal.key}" placeholder="e.g. scrambled eggs on toast…" />
+        <button class="add-meal-btn" id="btn-${meal.key}" onclick="addMealItem('${meal.key}')">＋</button>
+      </div>`;
+    cont.appendChild(slot);
+
+    // bind enter key
+    const inp = document.getElementById('input-' + meal.key);
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') addMealItem(meal.key); });
+
+    // render items
+    renderMealItems(meal.key, items);
+  });
+}
+
+function renderMealItems(mealKey, items) {
+  const cont = document.getElementById('items-' + mealKey);
+  if (!cont) return;
+  cont.innerHTML = '';
+  items.forEach((item, idx) => {
+    const div = document.createElement('div');
+    div.className = 'meal-item';
+    div.innerHTML = `
+      <span class="meal-item-name">${item.name}</span>
+      <span class="meal-item-cal">${item.cal ? item.cal + ' kcal' : '—'}</span>
+      <button class="meal-item-del" onclick="deleteMealItem('${mealKey}', ${idx})">✕</button>`;
+    cont.appendChild(div);
+  });
+}
+
+function totalCal(data) {
+  return MEALS.reduce((a, m) => a + (data[m.key] || []).reduce((b, x) => b + (x.cal || 0), 0), 0);
+}
+
+async function addMealItem(mealKey) {
+  const inp = document.getElementById('input-' + mealKey);
+  const btn = document.getElementById('btn-' + mealKey);
+  const name = inp.value.trim();
+  if (!name) return;
+
+  // Show loading
+  btn.innerHTML = '<span class="ai-spinner"></span>';
+  btn.classList.add('loading');
+  inp.disabled = true;
+
+  let cal = 0;
+  try {
+    cal = await estimateCalories(name);
+  } catch(e) { cal = 0; }
+
+  const data = dayData(currentWeek, currentDay);
+  if (!data[mealKey]) data[mealKey] = [];
+  data[mealKey].push({ name, cal });
+  save();
+
+  inp.value = '';
+  btn.innerHTML = '＋';
+  btn.classList.remove('loading');
+  inp.disabled = false;
+  inp.focus();
+
+  renderPlanner();
+  toast(`Added: ${name} ${cal ? '(~' + cal + ' kcal)' : ''}`);
+}
+
+function deleteMealItem(mealKey, idx) {
+  const data = dayData(currentWeek, currentDay);
+  data[mealKey].splice(idx, 1);
+  save();
+  renderPlanner();
+}
+
+// ── AI CALORIE ESTIMATOR ───────────────────
+async function estimateCalories(foodName) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 100,
+      messages: [{
+        role: 'user',
+        content: `Estimate the calories for a typical single serving of: "${foodName}". Reply with ONLY a single integer number. No text, no units, just the number. If unsure, give your best estimate.`
+      }]
+    })
+  });
+  const data = await response.json();
+  const text = data.content?.[0]?.text?.trim() || '0';
+  const num = parseInt(text.replace(/[^0-9]/g, ''));
+  return isNaN(num) ? 0 : num;
+}
+
+// ── OVERVIEW ───────────────────────────────
+function renderOverview() {
+  document.getElementById('wh-week-label').textContent = 'Week ' + currentWeek;
+  document.getElementById('nav-week-badge').textContent = 'Week ' + currentWeek;
+
+  let weekTotal = 0;
+  const dayTotals = DAYS.map((d, i) => {
+    const data = dayData(currentWeek, i);
+    const cal = totalCal(data);
+    weekTotal += cal;
+    return { day: d, cal, data };
+  });
+
+  document.getElementById('wh-total-cal').textContent = weekTotal + ' kcal this week';
+
+  // breakdown cards
+  const breakdown = document.getElementById('cal-breakdown');
+  const avg = weekTotal ? Math.round(weekTotal / DAYS.filter((_, i) => totalCal(dayData(currentWeek, i)) > 0).length || 1) : 0;
+  const maxDay = dayTotals.reduce((a, b) => b.cal > a.cal ? b : a, dayTotals[0]);
+  breakdown.innerHTML = `
+    <div class="cal-card"><div class="cal-card-label">Weekly total</div><div class="cal-card-val">${weekTotal}</div></div>
+    <div class="cal-card"><div class="cal-card-label">Daily avg</div><div class="cal-card-val">${avg || '—'}</div></div>
+    <div class="cal-card"><div class="cal-card-label">Highest day</div><div class="cal-card-val" style="font-size:15px;">${maxDay.cal ? maxDay.day.slice(0,3) + ' ' + maxDay.cal : '—'}</div></div>
+    <div class="cal-card"><div class="cal-card-label">Days planned</div><div class="cal-card-val">${dayTotals.filter(d => d.cal > 0).length} / 7</div></div>`;
+
+  // day grid
+  const grid = document.getElementById('week-grid');
+  grid.innerHTML = '';
+  dayTotals.forEach(({ day, cal, data }, i) => {
+    const card = document.createElement('div');
+    card.className = 'week-day-card';
+    card.onclick = () => { currentDay = i; save(); showScreen('planner'); };
+
+    const allItems = MEALS.flatMap(m => (data[m.key] || []).map(x => x.name));
+    const preview = allItems.slice(0, 3);
+
+    card.innerHTML = `
+      <div class="week-day-header">
+        <div class="week-day-name">${day}</div>
+        <div class="week-day-cal">${cal ? cal + ' kcal' : '—'}</div>
+      </div>
+      <div class="week-day-meals">
+        ${preview.length ? preview.map(n => `<div class="week-day-meal-chip">${n}</div>`).join('') + (allItems.length > 3 ? `<div class="week-day-meal-chip">+${allItems.length - 3} more</div>` : '') : '<div class="week-day-empty">No meals planned yet</div>'}
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+// ── GROCERY ────────────────────────────────
+function renderGrocery() {
+  const items = groceryData();
+  const list = document.getElementById('grocery-list');
+  const prog = document.getElementById('grocery-progress');
+  const bar = document.getElementById('grocery-bar');
+  const label = document.getElementById('grocery-progress-label');
+
+  list.innerHTML = '';
+  if (items.length === 0) {
+    list.innerHTML = '<div style="text-align:center; color:var(--text-light); padding:32px; font-size:14px;">Your list is empty 🌻<br>Add items above!</div>';
+    prog.style.display = 'none';
+    return;
+  }
+
+  const checked = items.filter(x => x.checked).length;
+  prog.style.display = 'flex';
+  bar.style.width = Math.round(checked / items.length * 100) + '%';
+  label.textContent = checked + ' / ' + items.length;
+
+  items.forEach((item, idx) => {
+    const div = document.createElement('div');
+    div.className = 'grocery-item' + (item.checked ? ' checked' : '');
+    div.innerHTML = `
+      <div class="grocery-check">${item.checked ? '✓' : ''}</div>
+      <div class="grocery-item-name">${item.name}</div>
+      <button class="grocery-del" onclick="deleteGrocery(${idx})">✕</button>`;
+    div.onclick = (e) => { if (e.target.classList.contains('grocery-del')) return; toggleGrocery(idx); };
+    list.appendChild(div);
+  });
+}
+
+function addGroceryItem() {
+  const inp = document.getElementById('grocery-input');
+  const name = inp.value.trim();
+  if (!name) return;
+  groceryData().push({ name, checked: false });
+  save();
+  inp.value = '';
+  renderGrocery();
+}
+
+document.getElementById('grocery-input').addEventListener('keydown', e => { if (e.key === 'Enter') addGroceryItem(); });
+
+function toggleGrocery(idx) {
+  const items = groceryData();
+  items[idx].checked = !items[idx].checked;
+  save();
+  renderGrocery();
+}
+
+function deleteGrocery(idx) {
+  groceryData().splice(idx, 1);
+  save();
+  renderGrocery();
+}
+
+// ── SETTINGS ───────────────────────────────
+function renderSettings() {
+  document.getElementById('settings-week-label').textContent = 'Week ' + currentWeek;
+}
+
+function nextWeek() {
+  currentWeek++;
+  currentDay = 0;
+  save();
+  document.getElementById('nav-week-badge').textContent = 'Week ' + currentWeek;
+  toast('Started Week ' + currentWeek + ' 🌻');
+  renderSettings();
+}
+
+// ── MODAL ──────────────────────────────────
+function openModal(type) {
+  pendingModal = type;
+  selectedDays = new Set();
+  const overlay = document.getElementById('modal');
+  const title = document.getElementById('modal-title');
+  const sub = document.getElementById('modal-sub');
+  const body = document.getElementById('modal-body');
+
+  if (type === 'week') {
+    title.textContent = 'Wipe entire week?';
+    sub.textContent = 'This will delete all meals for Week ' + currentWeek + '. Your grocery list will not be affected.';
+    body.innerHTML = '';
+  } else if (type === 'days') {
+    title.textContent = 'Delete specific days';
+    sub.textContent = 'Select the days you want to clear. Unselected days will keep their meals.';
+    body.innerHTML = '<div class="day-check-list">' + DAYS.map((d, i) => {
+      const data = dayData(currentWeek, i);
+      const cal = totalCal(data);
+      const items = MEALS.flatMap(m => data[m.key] || []).length;
+      return `<div class="day-check-item" id="dci-${i}" onclick="toggleDaySelect(${i})">
+        <div class="day-check-box" id="dcb-${i}"></div>
+        <div class="day-check-name">${d}</div>
+        <div class="day-check-meals">${items ? items + ' meals' : 'empty'}</div>
+      </div>`;
+    }).join('') + '</div>';
+  } else if (type === 'all') {
+    title.textContent = 'Delete everything?';
+    sub.textContent = 'This permanently wipes ALL weeks, ALL meals, AND your grocery list. There is no undo.';
+    body.innerHTML = '';
+  }
+
+  overlay.classList.add('show');
+}
+
+function toggleDaySelect(i) {
+  if (selectedDays.has(i)) selectedDays.delete(i);
+  else selectedDays.add(i);
+  document.getElementById('dci-' + i).classList.toggle('selected', selectedDays.has(i));
+  document.getElementById('dcb-' + i).textContent = selectedDays.has(i) ? '✓' : '';
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+  pendingModal = '';
+}
+
+function doModalAction() {
+  if (pendingModal === 'week') {
+    state[wkey(currentWeek)] = {};
+    save();
+    toast('Week ' + currentWeek + ' cleared 🌻');
+  } else if (pendingModal === 'days') {
+    if (selectedDays.size === 0) { toast('No days selected'); return; }
+    selectedDays.forEach(i => {
+      if (state[wkey(currentWeek)]) state[wkey(currentWeek)][i] = null;
+    });
+    save();
+    toast(selectedDays.size + ' day(s) cleared ✓');
+  } else if (pendingModal === 'all') {
+    localStorage.removeItem('sunny_meals');
+    state = {}; currentWeek = 1; currentDay = 0;
+    save();
+    toast('Fresh start! 🌻');
+  }
+  closeModal();
+  renderPlanner();
+}
+
+// ── INIT ───────────────────────────────────
+load();
+document.getElementById('nav-week-badge').textContent = 'Week ' + currentWeek;
+renderPlanner();
+</script>
+</body>
+</html>
